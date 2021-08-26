@@ -1,3 +1,4 @@
 env/
 .vscode/
-*.session
+*.session*
+__pycache__/

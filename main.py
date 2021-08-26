@@ -1,13 +1,17 @@
+# region Import
 from os import environ
-from logging import Formatter, basicConfig, getLogger, INFO
+from logging import Formatter, basicConfig, getLogger, INFO, ERROR
 from datetime import datetime
 from pytz import timezone, utc
-from telethon import TelegramClient, events
+from telethon import TelegramClient
+from telethon.events import NewMessage
 from telethon.tl.types import InputPeerUser
 from telethon.tl.patched import Message
+from noise.my_module import read_chat_id
+# endregion
 
 
-# ~ Enable Logging
+# region Enable Logging
 def gmt8_time(*args):
     utc_dt = utc.localize(datetime.utcnow())
     asia = timezone('Asia/Makassar')
@@ -17,49 +21,66 @@ def gmt8_time(*args):
 
 basicConfig(
     # filename='log.txt', filemode='w',
-    datefmt="%Y-%m-%d %H:%M:%S",  level=INFO,
+    datefmt="%Y-%m-%d %H:%M:%S", level=ERROR,
     # format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    format='%(message)s',
+    format='%(levelname)s - %(message)s',
 )
-LOGGER = getLogger(__name__)
 Formatter.converter = gmt8_time
+LOGGER = getLogger(__name__)
+LOGGER.setLevel(INFO)
+print('\n')
 LOGGER.info('Log aktif, Hello Sir.')
+# endregion
 
-# ~ My Constanta
-# Use your own values from my.telegram.org
+# region My Constanta
+# ~ Use your own values from my.telegram.org
 API_ID = int(environ['API_ID'])
 API_HASH = environ['API_HASH']
 SESSION_NAME = 'development'
+# ~ My things
+CHAT_ID_SENDER = read_chat_id('noise/chat_id_senders.json')
+CHAT_ID_RECEIVERS = read_chat_id('noise/chat_id_receivers.json')
+# endregion
 
-USERNAME_SENDER = 'proto_1bot'
-USERNAME_RECEIVER = 'proto_2bot'
-
-
-# ~ Start Here
+# region The Party
 client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 LOGGER.info('Start client')
 client.start()
 
 
-@client.on(events.NewMessage(incoming=True, chats=USERNAME_SENDER))
-async def main(event: events.newmessage.NewMessage.Event):
-    await client.get_dialogs()
-    try:
-        receiver = await client.get_input_entity(USERNAME_RECEIVER)
-        LOGGER.info(
-            f'Got receiver ({USERNAME_RECEIVER}), forwarding message Sir.'
-        )
-        await forward(receiver, event.message)
-    except ValueError as e:
-        LOGGER.error(
-            f'Sorry Sir, I can not get any user with "{USERNAME_RECEIVER}" as their '
-            f'username.'
-        )
+@client.on(NewMessage(incoming=True, chats=CHAT_ID_SENDER))
+async def main(event: NewMessage.Event):
+    for chat_id_receiver in CHAT_ID_RECEIVERS:
+        try:
+            receiver = await client.get_input_entity(chat_id_receiver)
+            logsuc(chat_id_receiver)
+            await forward(receiver, event.message)
+        except ValueError:
+            logerr(chat_id_receiver)
+# endregion
 
 
+# region All Function
 async def forward(receiver: InputPeerUser, msg: Message):
     await client.send_message(receiver, msg)
 
 
+def logsuc(chat_id_receiver):
+    LOGGER.info(
+        f'Got receiver ({chat_id_receiver}), forwarding message Sir.'
+    )
+
+
+def logerr(chat_id_receiver):
+    LOGGER.error(
+        'Sorry Sir, I don not think you have any chat with chat_id '
+        f'"{chat_id_receiver}". I suggest you to run '
+        'write_chat_id.py to show your history chat_id.'
+    )
+# endregion
+
+
+# region Run
 client.run_until_disconnected()
 LOGGER.info('Stop client')
+# endregion
