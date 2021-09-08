@@ -93,17 +93,15 @@ async def cleanup() -> None:
     await client.disconnect()
 
 
-async def get_name_or_username(entity: Union[Channel, User, Chat]) -> str:
+async def get_name_or_title(entity: Union[Channel, User, Chat]) -> str:
+    """Return name or title from entity"""
     name = ""
     try:
         name = combine_first_name_and_last_name(
             entity.first_name, entity.last_name
         )
-    except AttributeError:  # Channel
-        try:
-            name = entity.username
-        except AttributeError:  # Chat
-            name = entity.title
+    except AttributeError:
+        name = entity.title
     return name
 
 
@@ -116,12 +114,12 @@ async def forward(event: newmessage.NewMessage.Event) -> None:
     await client.get_dialogs()
 
     chat = await event.get_chat()
-    sender_name = await get_name_or_username(chat)
+    sender_name = await get_name_or_title(chat)
 
     for chat_id_receiver in CHAT_ID_RECEIVERS:
         try:
             receiver = await client.get_entity(chat_id_receiver)
-            receiver_name = await get_name_or_username(receiver)
+            receiver_name = await get_name_or_title(receiver)
             LOGGER.info(f"Forward from {sender_name} to {receiver_name}.")
             await client.send_message(receiver, event.message)
         except ValueError as e:
@@ -147,7 +145,7 @@ def new_message_from_senders() -> NewMessage:
 
 async def get_detail_me() -> str:
     me = await client.get_me()
-    name = await get_name_or_username(me)
+    name = await get_name_or_title(me)
     un = "nousername" if me.username is None else me.username
     pn = "nophone" if me.phone is None else me.phone
     return f"{name} (@{un}) (+{pn})"
@@ -275,7 +273,7 @@ async def get_senders_name() -> List[str]:
     for chat_id_sender in CHAT_ID_SENDERS:
         try:
             sender = await client.get_entity(chat_id_sender)
-            sender_name = await get_name_or_username(sender)
+            sender_name = await get_name_or_title(sender)
             senders.append(sender_name)
         except ValueError as e:
             LOGGER.error(f"Sender not found, {repr(e)}.")
@@ -293,7 +291,7 @@ async def get_receivers_name() -> List[str]:
     for chat_id_receiver in CHAT_ID_RECEIVERS:
         try:
             receiver = await client.get_entity(chat_id_receiver)
-            receiver_name = await get_name_or_username(receiver)
+            receiver_name = await get_name_or_title(receiver)
             receivers.append(receiver_name)
         except ValueError as e:
             LOGGER.error(f"receiver not found, {repr(e)}.")
