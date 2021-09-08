@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <style>
+      .marleft {
+        margin-left: 70px;
+      }
+      .martop {
+        margin-top: 2rem;
+      }
+      .head1 {
+        font-size: calc(1.375rem + 1.5vw);
+      }
+      .left {
+        float: right;
+      }
+      .marbot {
+        margin-bottom: 1rem;
+      }
+      .scrollAble {
+        max-height: 400px;
+        overflow: auto;
+      }
+    </style>
+    <title>Start</title>
+  </head>
+  <body onload="typeWriter()">
+    <div class="container">
+      <div class="row marleft">
+        <div class="col-7">
+          <div class="martop head1 text-end">
+            <b>FORWARDING </b>
+          </div>
+        </div>
+        <div class="col">
+          <div class="martop head1 text-start">
+            <b id="typing"></b>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="text-center">
+            <span>Every new message from SENDERS will be forwarded to RECEIVERS.</span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="left marbot">
+            <a class="btn btn-danger" href="{{ROUTE_LOGOUT}}">Logout</a>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="scrollAble">
+            <table class="table table-bordered">
+              <thead>
+                <tr class="table-secondary">
+                  <th class="text-center" scope="col">SENDERS</th>
+                  <th class="text-center" scope="col">RECEIVERS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-secondary">
+                  <td>
+                    {% for sender_name in data['senders'] %}
+                    <li>{{sender_name}}</li>
+                    {% endfor %}
+                  </td>
+                  <td>
+                    {% for receiver_name in data['receivers'] %}
+                    <li>{{receiver_name}}</li>
+                    {% endfor %}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="left">
+            <a href="{{ROUTE_STOP}}" class="btn btn-primary">Stop</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      var i = 0;
+      var txt = "...";
+      var speed = 800;
+
+      function typeWriter() {
+        if (i < txt.length) {
+          document.getElementById("typing").innerHTML += txt.charAt(i);
+          i++;
+          setTimeout(typeWriter, speed);
+        } else {
+          document.getElementById("typing").innerHTML = "";
+          i = 0;
+          setTimeout(typeWriter, speed);
+        }
+      }
+    </script>
+  </body>
+</html>

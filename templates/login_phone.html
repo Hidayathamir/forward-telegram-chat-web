@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <style>
+      #myText {
+        text-align: center;
+        font-family: arimo;
+        margin-top: 250px;
+      }
+      #myForm {
+        margin-top: 10px;
+      }
+      #sendLoginCodeBtn {
+        margin-top: 20px;
+      }
+      .alert {
+        display: inline-block;
+      }
+    </style>
+    <title>Login : Input Phone</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h1 id="myText">ENTER PHONE NUMBER</h1>
+        </div>
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for message in messages %}
+      <div class="row">
+        <div class="col text-center">
+          <div class="alert alert-danger">{{ message }}</div>
+        </div>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+      <div class="row">
+        <div class="col-4 col-sm-3"></div>
+        <div class="col">
+          <div class="userInput">
+            <form id="myForm" action="{{ROUTE_LOGIN_PHONE}}" method="post">
+              <div class="input-group">
+                <span class="input-group-text">+62</span>
+                <input
+                  autofocus
+                  id="inputPhone"
+                  class="form-control"
+                  onkeyup="enableSendLoginCodeBtn()"
+                  onkeypress="return onlyNumberKey(event)"
+                  name="{{FORM_NAME_PHONE}}"
+                  type="text"
+                  placeholder="82112345678"
+                  maxlength="12"
+                />
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="col-4 col-sm-3"></div>
+      </div>
+      <div class="row">
+        <div class="col text-center">
+          <input class="btn btn-primary" form="myForm" id="sendLoginCodeBtn" type="submit" value="Send Login Code" disabled />
+        </div>
+      </div>
+    </div>
+    <script>
+      function enableSendLoginCodeBtn() {
+        const button = document.getElementById("sendLoginCodeBtn");
+        const inputMinimalSembilan = document.getElementById("inputPhone").value.length >= 9;
+        button.disabled = inputMinimalSembilan ? false : true;
+      }
+      function onlyNumberKey(evt) {
+        const ASCIICode = evt.which ? evt.which : evt.keyCode;
+        const angkaPertamaNol = document.getElementById("inputPhone").value.length == 0 && ASCIICode == 48;
+        const bukanAngka = ASCIICode > 31 && (ASCIICode < 48 || ASCIICode > 57);
+        if (angkaPertamaNol) return false;
+        if (bukanAngka) return false;
+        return true;
+      }
+    </script>
+  </body>
+</html>
