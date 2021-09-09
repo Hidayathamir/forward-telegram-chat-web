@@ -3,10 +3,11 @@ from logging import Formatter, basicConfig, getLogger, INFO, ERROR
 from typing import Union, List, Dict
 from datetime import datetime
 from pytz import timezone, utc
-import hypercorn.asyncio
+from hypercorn.asyncio import serve
+from hypercorn.config import Config
 from quart.wrappers.response import Response
 from werkzeug.datastructures import MultiDict
-from quart import Quart, redirect, render_template, request, flash
+from quart import Quart, redirect, render_template, flash, url_for, request
 from telethon import TelegramClient
 from telethon.events import newmessage
 from telethon.events import NewMessage
@@ -17,29 +18,6 @@ from telethon.errors.rpcerrorlist import (
     FloodWaitError,
 )
 from telethon.tl.types import Channel, Chat, User
-
-
-# region Enable Logging
-def gmt8_time(*args):
-    utc_dt = utc.localize(datetime.utcnow())
-    asia = timezone("Asia/Makassar")
-    converted = utc_dt.astimezone(asia)
-    return converted.timetuple()
-
-
-basicConfig(
-    # filename=f"{SESSION_NAME}.log",
-    # filemode="w",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=ERROR,
-    # format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    format="%(levelname)s - %(message)s",
-)
-Formatter.converter = gmt8_time
-LOGGER = getLogger(__name__)
-LOGGER.setLevel(INFO)
-LOGGER.info("The log is active, Hello Sir.")
-# endregion
 
 
 # region Constants
@@ -55,9 +33,13 @@ client = TelegramClient(SESSION, API_ID, API_HASH)
 app = Quart(__name__)
 app.secret_key = "CHANGE THIS TO SOMETHING SECRET"
 
+# Hypercorn (ASGI)
+HYPERCORN_CONFIG = Config.from_mapping({"bind": "127.0.0.1:8000"})
+
 # General constants
 CHAT_ID_SENDERS: List[int] = []
 CHAT_ID_RECEIVERS: List[int] = []
+
 ROUTE_INDEX = "/"
 ROUTE_LOGIN_PHONE = "/login/phone/"
 ROUTE_LOGIN_CODE = "/login/code/"
@@ -65,10 +47,12 @@ ROUTE_LOGOUT = "/logout/"
 ROUTE_SETTINGS = "/settings/"
 ROUTE_START = "/settings/start/"
 ROUTE_STOP = "/settings/stop/"
+
 TEMPLATE_LOGIN_CODE = "login_code.html"
 TEMPLATE_LOGIN_PHONE = "login_phone.html"
 TEMPLATE_SETTINGS = "settings.html"
 TEMPLATE_START = "start.html"
+
 FORM_NAME_PHONE = "phone"
 FORM_NAME_CODE = ["first", "second", "third", "fourth", "fifth"]
 FORM_NAME_NEW_SENDERS = "new_senders"
@@ -76,9 +60,32 @@ FORM_NAME_NEW_RECEIVERS = "new_receivers"
 # endregion
 
 
+# region Enable Logging
+def gmt8_time(*args):
+    utc_dt = utc.localize(datetime.utcnow())
+    asia = timezone("Asia/Makassar")
+    converted = utc_dt.astimezone(asia)
+    return converted.timetuple()
+
+
+basicConfig(
+    # filename=f"{SESSION}.log",
+    # filemode="w",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    # level=ERROR,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    # format="%(levelname)s - %(message)s",
+)
+Formatter.converter = gmt8_time
+LOGGER = getLogger(__name__)
+LOGGER.setLevel(INFO)
+LOGGER.info("The log is active, Hello Sir.")
+# endregion
+
+
 # region Third Function
 async def main() -> None:
-    await hypercorn.asyncio.serve(app, hypercorn.Config())
+    await serve(app, HYPERCORN_CONFIG)
 
 
 @app.before_serving
@@ -168,7 +175,7 @@ def client_is_connected():
                 return await func(*args)
             client = TelegramClient(SESSION, API_ID, API_HASH)
             await client.connect()
-            return redirect(ROUTE_LOGIN_PHONE)
+            return redirect(url_for("login_phone"))
 
         return wrapped
 
@@ -185,7 +192,7 @@ def client_is_login():
         async def wrapped(*args):
             if await client.is_user_authorized():
                 return await func(*args)
-            return redirect(ROUTE_LOGIN_PHONE)
+            return redirect(url_for("login_phone"))
 
         return wrapped
 
@@ -202,7 +209,7 @@ def client_is_not_login():
         async def wrapped(*args):
             if not await client.is_user_authorized():
                 return await func(*args)
-            return redirect(ROUTE_SETTINGS)
+            return redirect(url_for("settings"))
 
         return wrapped
 
@@ -226,7 +233,7 @@ def client_have_event_handlers():
         async def wrapped(*args):
             if is_client_have_event_handlers():
                 return await func(*args)
-            return redirect(ROUTE_SETTINGS)
+            return redirect(url_for("settings"))
 
         return wrapped
 
@@ -243,7 +250,7 @@ def client_have_not_event_handlers():
         async def wrapped(*args):
             if not is_client_have_event_handlers():
                 return await func(*args)
-            return redirect(ROUTE_START)
+            return redirect(url_for("start"))
 
         return wrapped
 
@@ -269,7 +276,7 @@ async def get_senders_name() -> List[str]:
     then return senders list, if not found in get_entity then log.
     """
     await client.get_dialogs()
-    senders = []
+    senders: List[str] = []
     for chat_id_sender in CHAT_ID_SENDERS:
         try:
             sender = await client.get_entity(chat_id_sender)
@@ -287,7 +294,7 @@ async def get_receivers_name() -> List[str]:
     then return receivers list, if not found in get_entity then log.
     """
     await client.get_dialogs()
-    receivers = []
+    receivers: List[str] = []
     for chat_id_receiver in CHAT_ID_RECEIVERS:
         try:
             receiver = await client.get_entity(chat_id_receiver)
@@ -353,7 +360,7 @@ def get_list_from_form(form: MultiDict, who: str) -> List[int]:
 
 async def get_chat_id() -> Dict[int, str]:
     """Iterate dialogs to get dialog id and dialog name"""
-    chat_id = {}
+    chat_id: Dict[int, str] = {}
     async for dialog in client.iter_dialogs():
         chat_id[dialog.id] = dialog.name
     return chat_id
@@ -377,7 +384,7 @@ async def try_send_code_request(phone_num: str) -> Union[str, Response]:
         LOGGER.error(f"error code: a3, {repr(e)}.")
         return "Too many code requests, wait a minute."
     LOGGER.info(f"{phone_num} ask code request.")
-    return redirect(ROUTE_LOGIN_CODE)
+    return redirect(url_for("login_code"))
 
 
 async def try_sign_in(code: str) -> Union[str, Response]:
@@ -395,14 +402,14 @@ async def try_sign_in(code: str) -> Union[str, Response]:
     except PhoneCodeInvalidError as e:
         LOGGER.error(f"error code: b2, {repr(e)}.")
         await flash("Wrong code.")
-        return redirect(ROUTE_LOGIN_CODE)  # wrong code
+        return redirect(url_for("login_code"))  # wrong code
     except ValueError as e:
         LOGGER.error(f"error code: b3, {repr(e)}.")
         await flash("Please enter your phone number.")
-        return redirect(ROUTE_LOGIN_PHONE)  # Haven't entered phone number
+        return redirect(url_for("login_phone"))  # Haven't entered phone number
     detail_me = await get_detail_me()
     LOGGER.info(f"Client sign in. {detail_me}.")
-    return redirect(ROUTE_SETTINGS)
+    return redirect(url_for("settings"))
 
 
 async def log_out() -> None:
@@ -418,7 +425,7 @@ async def log_out() -> None:
 # region Main Function
 @app.route(ROUTE_INDEX, endpoint="index")
 async def index() -> Response:
-    return redirect(ROUTE_SETTINGS)
+    return redirect(url_for("settings"))
 
 
 @app.route(ROUTE_LOGIN_PHONE, methods=["GET", "POST"], endpoint="login_phone")
@@ -428,7 +435,6 @@ async def login_phone() -> Union[str, Response]:
     if request.method == "GET":
         return await render_template(
             TEMPLATE_LOGIN_PHONE,
-            ROUTE_LOGIN_PHONE=ROUTE_LOGIN_PHONE,
             FORM_NAME_PHONE=FORM_NAME_PHONE,
         )
     if request.method == "POST":
@@ -447,7 +453,6 @@ async def login_code() -> Union[str, Response]:
     if request.method == "GET":
         return await render_template(
             TEMPLATE_LOGIN_CODE,
-            ROUTE_LOGIN_CODE=ROUTE_LOGIN_CODE,
             FORM_NAME_CODE=FORM_NAME_CODE,
         )
     if request.method == "POST":
@@ -464,7 +469,7 @@ async def login_code() -> Union[str, Response]:
 @client_is_login()
 async def logout() -> Response:
     await log_out()
-    return redirect(ROUTE_LOGIN_PHONE)
+    return redirect(url_for("login_phone"))
 
 
 @app.route(ROUTE_SETTINGS, endpoint="settings")
@@ -476,8 +481,6 @@ async def settings() -> str:
     return await render_template(
         TEMPLATE_SETTINGS,
         chat_id=chat_id,
-        ROUTE_LOGOUT=ROUTE_LOGOUT,
-        ROUTE_START=ROUTE_START,
         FORM_NAME_NEW_SENDERS=FORM_NAME_NEW_SENDERS,
         FORM_NAME_NEW_RECEIVERS=FORM_NAME_NEW_RECEIVERS,
     )
@@ -489,7 +492,7 @@ async def settings() -> str:
 async def start() -> Union[Response, str]:
     if request.method == "GET":
         if not is_client_have_event_handlers():
-            return redirect(ROUTE_SETTINGS)
+            return redirect(url_for("settings"))
 
     if request.method == "POST":
         form = await request.form
@@ -500,15 +503,10 @@ async def start() -> Union[Response, str]:
         remove_all_event_handlers()
         add_event_forward()
 
-    data = {}
+    data: Dict[str, List[str]] = {}
     data["senders"] = await get_senders_name()
     data["receivers"] = await get_receivers_name()
-    return await render_template(
-        TEMPLATE_START,
-        data=data,
-        ROUTE_LOGOUT=ROUTE_LOGOUT,
-        ROUTE_STOP=ROUTE_STOP,
-    )
+    return await render_template(TEMPLATE_START, data=data)
 
 
 @app.route(ROUTE_STOP, endpoint="stop")
@@ -517,7 +515,7 @@ async def start() -> Union[Response, str]:
 @client_have_event_handlers()
 async def stop() -> Response:
     remove_all_event_handlers()
-    return redirect(ROUTE_SETTINGS)
+    return redirect(url_for("settings"))
 
 
 # endregion

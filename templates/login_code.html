@@ -71,7 +71,7 @@
       </div>
       {% endfor %} {% endif %} {% endwith %}
       <div class="userInput">
-        <form action="{{ROUTE_LOGIN_CODE}}" method="post">
+        <form action="{{url_for('login_code')}}" method="post">
           <input
             autofocus
             class="inputField"

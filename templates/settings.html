@@ -49,13 +49,13 @@
       <div class="row">
         <div class="col">
           <div class="left marbot">
-            <a class="btn btn-danger" href="{{ROUTE_LOGOUT}}">Logout</a>
+            <a class="btn btn-danger" href="{{url_for('logout')}}">Logout</a>
           </div>
         </div>
       </div>
       <div class="row">
         <div class="col">
-          <form id="myCheckbox" action="{{ROUTE_START}}" method="post">
+          <form id="myCheckbox" action="{{url_for('start')}}" method="post">
             <div class="scrollAble">
               <table class="table table-bordered">
                 <thead>
