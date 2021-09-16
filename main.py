@@ -1,5 +1,6 @@
-from os import environ
-from logging import Formatter, basicConfig, getLogger, INFO, ERROR
+from os.path import dirname, abspath, join
+from yaml import safe_load
+from logging import Formatter, basicConfig, getLogger, INFO
 from typing import Union, List, Dict
 from datetime import datetime
 from pytz import timezone, utc
@@ -21,20 +22,33 @@ from telethon.tl.types import Channel, Chat, User
 
 
 # region Constants
+DIRNAME_LOCATION = dirname(abspath(__file__))
+
+
+def get_environ() -> Dict[str, str]:
+    yaml_location = join(DIRNAME_LOCATION, "environ.yaml")
+    with open(yaml_location, "r", encoding="utf-8") as yaml_file:
+        environ = safe_load(yaml_file)
+    return environ
+
+
+environ = get_environ()
+
+
 # my.telegram.com
 API_ID = int(environ["API_ID"])
 API_HASH = environ["API_HASH"]
 
 # Telethon client
-SESSION = "development"
+SESSION = environ["SESSION"]
 client = TelegramClient(SESSION, API_ID, API_HASH)
 
 # Quart app
 app = Quart(__name__)
-app.secret_key = "CHANGE THIS TO SOMETHING SECRET"
+app.secret_key = environ["SECRET_KEY"]
 
 # Hypercorn (ASGI)
-HYPERCORN_CONFIG = Config.from_mapping({"bind": "127.0.0.1:8000"})
+HYPERCORN_CONFIG = Config.from_mapping({"bind": environ["HOST:PORT"]})
 
 # General constants
 CHAT_ID_SENDERS: List[int] = []
@@ -69,12 +83,10 @@ def gmt8_time(*args):
 
 
 basicConfig(
-    # filename=f"{SESSION}.log",
-    # filemode="w",
+    filename=join(DIRNAME_LOCATION, f"{SESSION}.log"),
+    filemode="w",
     datefmt="%Y-%m-%d %H:%M:%S",
-    # level=ERROR,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    # format="%(levelname)s - %(message)s",
 )
 Formatter.converter = gmt8_time
 LOGGER = getLogger(__name__)
