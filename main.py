@@ -40,7 +40,7 @@ API_ID = int(environ["API_ID"])
 API_HASH = environ["API_HASH"]
 
 # Telethon client
-SESSION = environ["SESSION"]
+SESSION = join(DIRNAME_LOCATION, environ["SESSION"])
 client = TelegramClient(SESSION, API_ID, API_HASH)
 
 # Quart app
