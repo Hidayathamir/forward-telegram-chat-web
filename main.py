@@ -1,5 +1,5 @@
+from os import environ
 from os.path import dirname, abspath, join
-from yaml import safe_load
 from logging import Formatter, basicConfig, getLogger, INFO
 from typing import Union, List, Dict
 from datetime import datetime
@@ -24,17 +24,6 @@ from telethon.tl.types import Channel, Chat, User
 # region Constants
 DIRNAME_LOCATION = dirname(abspath(__file__))
 
-
-def get_environ() -> Dict[str, str]:
-    yaml_location = join(DIRNAME_LOCATION, "environ.yaml")
-    with open(yaml_location, "r", encoding="utf-8") as yaml_file:
-        environ = safe_load(yaml_file)
-    return environ
-
-
-environ = get_environ()
-
-
 # my.telegram.com
 API_ID = int(environ["API_ID"])
 API_HASH = environ["API_HASH"]
@@ -48,7 +37,9 @@ app = Quart(__name__)
 app.secret_key = environ["SECRET_KEY"]
 
 # Hypercorn (ASGI)
-HYPERCORN_CONFIG = Config.from_mapping({"bind": environ["HOST:PORT"]})
+HYPERCORN_CONFIG = Config.from_mapping(
+    {"bind": f"{environ['HOST']}:{environ['PORT']}"}
+)
 
 # General constants
 CHAT_ID_SENDERS: List[int] = []
