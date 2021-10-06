@@ -130,8 +130,6 @@ async def forward(event: newmessage.NewMessage.Event) -> None:
     then log, then send_message that we got from sender.
     if receiver not found in get_entity, then log.
     """
-    await client.get_dialogs()
-
     chat = await event.get_chat()
     sender_name = await get_name_or_title(chat)
 
@@ -283,11 +281,10 @@ def change_receivers(new_receivers: List[int]) -> None:
 
 async def get_senders_name() -> List[str]:
     """
-    get all dialogs, then Iterate CHAT_ID_SENDERS, then get_entity,
+    Iterate CHAT_ID_SENDERS, then get_entity,
     if found then combine first name and last name, then append to senders list,
     then return senders list, if not found in get_entity then log.
     """
-    await client.get_dialogs()
     senders: List[str] = []
     for chat_id_sender in CHAT_ID_SENDERS:
         try:
@@ -301,11 +298,10 @@ async def get_senders_name() -> List[str]:
 
 async def get_receivers_name() -> List[str]:
     """
-    get all dialogs, then Iterate CHAT_ID_RECEIVERS, then get_entity,
+    Iterate CHAT_ID_RECEIVERS, then get_entity,
     if found then combine first name and last name, then append to receivers list,
     then return receivers list, if not found in get_entity then log.
     """
-    await client.get_dialogs()
     receivers: List[str] = []
     for chat_id_receiver in CHAT_ID_RECEIVERS:
         try:
