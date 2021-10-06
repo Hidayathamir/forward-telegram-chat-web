@@ -1,6 +1,9 @@
 # forward-telegram-chat-web
-With this project, you can access telegram user then forward message from `A,B,C,D,E` to `F,G,H,I,J`.
+Access telegram user then forward new message from `A,B,C,D,E` to `F,G,H,I,J`.
 
 ## How to run this project
-1. explain here how to run this docker file, pull image from docker hub
-2. explain environ
+1. Open my.telegram.org to get your API_ID and API_HASH then use it in `environ`.
+2. run image with environment file `environ` and map port `127.0.0.1:6980:6980`.
+    ```
+    docker run --env-file environ -p 127.0.0.1:6980:6980 hidayathamir/forward-telegram-chat-web
+    ```
