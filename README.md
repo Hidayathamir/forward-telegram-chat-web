@@ -1,5 +1,5 @@
 # forward-telegram-chat-web
-With this project, you can access telegram user then forward message from `A,B,C,D,E` to `F,G,H,I,J`.
+Access telegram user then forward new message from `A,B,C,D,E` to `F,G,H,I,J`.
 
 ## How to run this project
 1. Download then open the project folder, and install requirement.
@@ -26,3 +26,6 @@ python3 main.py
 
 7. Chose senders and receivers. then click `start`.
 ![start](./README_assets/start.png)
+
+## Docker version
+If you like to run this project with docker, here you go [docker version](https://github.com/Hidayathamir/forward-telegram-chat-web/tree/feature/docker)
