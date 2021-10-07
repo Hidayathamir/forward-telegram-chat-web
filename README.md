@@ -8,3 +8,4 @@ All you have to do is.
     ```
     docker run --env-file ./environ -p 127.0.0.1:6980:6980 hidayathamir/forward-telegram-chat-web
     ```
+3. Open [127.0.0.1:6980](http://127.0.0.1:6980/) in your browser
