@@ -228,9 +228,7 @@ def client_is_not_login():
 
 def is_client_have_event_handlers() -> bool:
     """Return boolean whether client have event handlers or not"""
-    if len(client.list_event_handlers()) != 0:
-        return True
-    return False
+    return len(client.list_event_handlers()) != 0
 
 
 def client_have_event_handlers():
@@ -334,19 +332,13 @@ def add_event_forward() -> None:
 
 def is_form_code_valid(form: MultiDict) -> bool:
     """Return boolean whether form code is valid or not"""
-    is_valid = True
-    for form_name in FORM_NAME_CODE:
-        if form_name not in form:
-            is_valid = False
-            break
+    is_valid = all(form_name in form for form_name in FORM_NAME_CODE)
     return is_valid
 
 
 def get_code_from_form(form: MultiDict) -> str:
     """Get code from form"""
-    code = ""
-    for i in FORM_NAME_CODE:
-        code += form[i]
+    code = "".join(form[i] for i in FORM_NAME_CODE)
     return code
 
 
@@ -498,9 +490,8 @@ async def settings() -> str:
 @client_is_connected()
 @client_is_login()
 async def start() -> Union[Response, str]:
-    if request.method == "GET":
-        if not is_client_have_event_handlers():
-            return redirect(url_for("settings"))
+    if request.method == "GET" and not is_client_have_event_handlers():
+        return redirect(url_for("settings"))
 
     if request.method == "POST":
         form = await request.form
@@ -511,9 +502,10 @@ async def start() -> Union[Response, str]:
         remove_all_event_handlers()
         add_event_forward()
 
-    data: Dict[str, List[str]] = {}
-    data["senders"] = await get_senders_name()
-    data["receivers"] = await get_receivers_name()
+    data: Dict[str, List[str]] = {
+        "senders": await get_senders_name(),
+        "receivers": await get_receivers_name(),
+    }
     return await render_template(TEMPLATE_START, data=data)
 
 
