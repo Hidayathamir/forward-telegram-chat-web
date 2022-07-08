@@ -2,6 +2,7 @@
 Access telegram user then forward new message from `A,B,C,D,E` to `F,G,H,I,J`.
 
 ## How to run this project
+[Youtube Explain](https://youtu.be/NoKvPswbKnw) (Bahasa Indonesia).
 1. Download then open the project folder, and install requirement.
 ```
 pip3 install -r requirements.txt
